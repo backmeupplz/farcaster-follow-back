@@ -1,24 +1,20 @@
-import 'module-alias/register'
-
-import * as prompt from 'prompt'
 import { MerkleAPIClient, User } from '@standard-crypto/farcaster-js'
 import { Wallet } from 'ethers'
+import inquirer from 'inquirer'
 
-void (async () => {
+async function main() {
   console.log('Welcome to the Farcaster follow back script!')
   console.log('This script will follow back all users that follow you.')
   console.log(
     "Please, enter you seed phrase for the Farcaster wallet (make sure to check out the code in app.ts if you don't trust this script):"
   )
-  const { seed } = await prompt.get({
-    properties: {
-      seed: {
-        description: 'Seed phrase',
-        required: true,
-        pattern: /^(\w+\s){11}\w+$/,
-      },
+  const { seed } = await inquirer.prompt([
+    {
+      type: 'password',
+      name: 'seed',
+      message: 'Seed phrase:',
     },
-  })
+  ])
   if (typeof seed !== 'string') {
     throw new Error('Seed is not a string')
   }
@@ -30,6 +26,7 @@ void (async () => {
   )
   const following = [] as User[]
   const user = await client.fetchCurrentUser()
+  console.log(`You are ${user.username ? `@${user.username}` : user.fid}`)
   for await (const follower of client.fetchUserFollowing(user)) {
     following.push(follower)
   }
@@ -62,4 +59,11 @@ void (async () => {
     }
   }
   console.log('Done!')
-})()
+}
+
+try {
+  await main()
+} catch (error) {
+  console.error('error:', error instanceof Error ? error.message : error)
+  console.log(error)
+}

@@ -21,6 +21,28 @@ async function main() {
   const wallet = Wallet.fromMnemonic(seed)
   const client = new MerkleAPIClient(wallet)
   console.log(`Got wallet ${wallet.address}`)
+  const { needRevoking } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'needRevoking',
+      message: 'Do you need to revoke your auth tokens (probably no)?',
+      default: false,
+    },
+  ])
+  if (needRevoking) {
+    console.log(
+      'Creating 50 auth tokens that expire long time in the future...'
+    )
+    const tokens = await Promise.all(
+      Array.from(Array(50).keys()).map(() =>
+        // go for the a very big expiry to make sure they have longer expiry than all existing tokens
+        client.createAuthToken(109999999999999)
+      )
+    )
+    console.log(`Revoking ${tokens.length} tokens...`)
+    await Promise.all(tokens.map((token) => client.revokeAuthToken(token)))
+    console.log('Revoked all tokens!')
+  }
   console.log(
     "Fetching users that you follow so that we don't follow them again..."
   )
